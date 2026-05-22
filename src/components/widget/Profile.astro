@@ -11,9 +11,8 @@ const bio = config.bio || "";
 const links = config.links || [];
 ---
 <div id="profile-card" class="card-base p-3 relative">
-    <button id="edit-profile-btn" class="profile-edit-btn" aria-label="Edit profile"
-            style="position:absolute;top:8px;right:8px;z-index:10;width:28px;height:28px;border:none;border-radius:6px;background:var(--btn-regular-bg);color:var(--btn-content);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;opacity:0;transition:opacity 0.2s;"
-            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'"
+    <button id="edit-profile-btn" class="profile-edit-btn login-only" aria-label="Edit profile"
+            style="display:none;position:absolute;top:8px;right:8px;z-index:10;width:28px;height:28px;border:none;border-radius:6px;background:var(--btn-regular-bg);color:var(--btn-content);cursor:pointer;align-items:center;justify-content:center;font-size:14px;"
             title="编辑个人信息">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
     </button>
@@ -85,14 +84,26 @@ const links = config.links || [];
   document.addEventListener('DOMContentLoaded', loadProfile);
   window.addEventListener('profile-updated', loadProfile);
 
-  // Edit button
-  const card = document.getElementById('profile-card');
+  // Edit button — only show when logged in
+  function toggleEditButtons() {
+    const loggedIn = !!localStorage.getItem('github_token');
+    const editBtns = document.querySelectorAll('.login-only');
+    editBtns.forEach(el => {
+      (el as HTMLElement).style.display = loggedIn ? '' : 'none';
+    });
+  }
+  toggleEditButtons();
+  window.addEventListener('login-done', toggleEditButtons);
+
+  // Edit profile button
   const editBtn = document.getElementById('edit-profile-btn');
-  if (card && editBtn) {
-    card.addEventListener('mouseenter', () => { editBtn.style.opacity = '1'; });
-    card.addEventListener('mouseleave', () => { editBtn.style.opacity = '0'; });
+  if (editBtn) {
     editBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      if (!localStorage.getItem('github_token')) {
+        window.dispatchEvent(new CustomEvent('open-login'));
+        return;
+      }
       window.dispatchEvent(new CustomEvent('open-profile-editor'));
     });
   }

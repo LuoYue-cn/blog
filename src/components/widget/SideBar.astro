@@ -18,8 +18,8 @@ const className = Astro.props.class;
     <div id="sidebar-sticky" class="transition-all duration-700 flex flex-col w-full gap-[var(--layout-gap)] top-4 sticky top-4">
         <!-- 关于我 + 技能熟练度（合并为一个块） -->
         <div id="about-section" class="card-base p-4 onload-animation relative" style="animation-delay: 100ms">
-            <button id="edit-about-btn" aria-label="Edit about"
-                    style="position:absolute;top:8px;right:8px;z-index:10;width:28px;height:28px;border:none;border-radius:6px;background:var(--btn-regular-bg);color:var(--btn-content);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;opacity:0;transition:opacity 0.2s;"
+            <button id="edit-about-btn" class="login-only" aria-label="Edit about"
+                    style="display:none;position:absolute;top:8px;right:8px;z-index:10;width:28px;height:28px;border:none;border-radius:6px;background:var(--btn-regular-bg);color:var(--btn-content);cursor:pointer;align-items:center;justify-content:center;font-size:14px;"
                     title="编辑关于我">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
             </button>
@@ -73,13 +73,23 @@ const className = Astro.props.class;
   document.addEventListener('DOMContentLoaded', loadSidebarContent);
   window.addEventListener('profile-updated', loadSidebarContent);
 
-  // About edit button - show on hover
-  const aboutSec = document.getElementById('about-section');
+  // Edit about button
+  function toggleAllEditButtons() {
+    const loggedIn = !!localStorage.getItem('github_token');
+    document.querySelectorAll('.login-only').forEach(el => {
+      (el as HTMLElement).style.display = loggedIn ? '' : 'none';
+    });
+  }
+  toggleAllEditButtons();
+  window.addEventListener('login-done', toggleAllEditButtons);
+
   const aboutEdit = document.getElementById('edit-about-btn');
-  if (aboutSec && aboutEdit) {
-    aboutSec.addEventListener('mouseenter', () => { aboutEdit.style.opacity = '1'; });
-    aboutSec.addEventListener('mouseleave', () => { aboutEdit.style.opacity = '0'; });
+  if (aboutEdit) {
     aboutEdit.addEventListener('click', () => {
+      if (!localStorage.getItem('github_token')) {
+        window.dispatchEvent(new CustomEvent('open-login'));
+        return;
+      }
       window.dispatchEvent(new CustomEvent('open-about-editor'));
     });
   }
