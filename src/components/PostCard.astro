@@ -40,7 +40,8 @@ const className = Astro.props.class;
 const hasCover = image !== undefined && image !== null && image !== "";
 const pubYear = String(published.getFullYear());
 const pubMonth = String(published.getMonth() + 1).padStart(2, "0");
-const postId = entry?.id?.replace(/[^a-zA-Z0-9_-]/g, "_") || title?.replace(/\s+/g, "-");
+const postId =
+	entry?.id?.replace(/[^a-zA-Z0-9_-]/g, "_") || title?.replace(/\s+/g, "-");
 
 const { remarkPluginFrontmatter } = await entry.render();
 ---

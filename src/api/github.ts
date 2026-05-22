@@ -13,11 +13,17 @@ export async function fetchPublicData<T>(): Promise<T | null> {
 }
 
 /** 从 GitHub API 读取数据文件（需要 Token，支持私有仓库） */
-export async function fetchData<T>(): Promise<{ content: T; sha: string } | null> {
+export async function fetchData<T>(): Promise<{
+	content: T;
+	sha: string;
+} | null> {
 	const token = getToken();
 	const url = `${GITHUB_API}/repos/${githubConfig.owner}/${githubConfig.repo}/contents/${githubConfig.dataPath}`;
 	const res = await fetch(url, {
-		headers: { Accept: "application/vnd.github.v3+json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+		headers: {
+			Accept: "application/vnd.github.v3+json",
+			...(token ? { Authorization: `Bearer ${token}` } : {}),
+		},
 	});
 	if (res.status === 404) return null;
 	if (!res.ok) throw new Error(`读取失败: ${res.status}`);
@@ -26,7 +32,10 @@ export async function fetchData<T>(): Promise<{ content: T; sha: string } | null
 }
 
 /** 保存数据到 GitHub */
-export async function saveData(newData: unknown, sha: string | null): Promise<string> {
+export async function saveData(
+	newData: unknown,
+	sha: string | null,
+): Promise<string> {
 	const token = getToken();
 	if (!token) throw new Error("未登录，请先输入 GitHub Token");
 	const url = `${GITHUB_API}/repos/${githubConfig.owner}/${githubConfig.repo}/contents/${githubConfig.dataPath}`;
@@ -53,7 +62,10 @@ export async function saveData(newData: unknown, sha: string | null): Promise<st
 /** 验证 Token 是否有效，返回 GitHub 用户名 */
 export async function verifyToken(token: string): Promise<string | null> {
 	const res = await fetch(`${GITHUB_API}/user`, {
-		headers: { Accept: "application/vnd.github.v3+json", Authorization: `Bearer ${token}` },
+		headers: {
+			Accept: "application/vnd.github.v3+json",
+			Authorization: `Bearer ${token}`,
+		},
 	});
 	if (!res.ok) return null;
 	const user = await res.json();
