@@ -7,7 +7,7 @@ import {
 	saveData,
 	saveToken,
 	verifyToken,
-} from "@api/github";
+} from "../../api/github";
 import {
 	setAboutText,
 	setCardRadius,
