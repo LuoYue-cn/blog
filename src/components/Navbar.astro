@@ -7,6 +7,8 @@ import { url } from "../utils/url-utils";
 import LightDarkSwitch from "./LightDarkSwitch.svelte";
 import Search from "./Search.svelte";
 import DisplaySettings from "./widget/DisplaySettings.svelte";
+import ProfileEditor from "./widget/ProfileEditor.svelte";
+import LoginDialog from "./widget/LoginDialog.svelte";
 import NavMenuPanel from "./widget/NavMenuPanel.astro";
 
 const className = Astro.props.class;
@@ -52,12 +54,17 @@ let links: NavBarLink[] = navBarConfig.links.map(
                     </button>
             )}
             <LightDarkSwitch client:only="svelte"></LightDarkSwitch>
+            <button aria-label="Login" class="btn-plain scale-animation rounded-lg w-11 h-11 active:scale-90" id="login-switch" title="登录">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13 12H3"/></svg>
+            </button>
             <button aria-label="Menu" name="Nav Menu" class="btn-plain scale-animation rounded-lg w-11 h-11 active:scale-90 md:!hidden" id="nav-menu-switch">
                 <Icon name="material-symbols:menu-rounded" class="text-[1.25rem]"></Icon>
             </button>
         </div>
         <NavMenuPanel links={links}></NavMenuPanel>
         <DisplaySettings client:only="svelte"></DisplaySettings>
+        <ProfileEditor client:only="svelte"></ProfileEditor>
+        <LoginDialog client:only="svelte"></LoginDialog>
     </div>
 </div>
 
@@ -83,10 +90,7 @@ function loadButtonScript() {
     let settingBtn = document.getElementById("display-settings-switch");
     if (settingBtn) {
         settingBtn.onclick = function () {
-            let settingPanel = document.getElementById("display-setting");
-            if (settingPanel) {
-                settingPanel.classList.toggle("float-panel-closed");
-            }
+            window.dispatchEvent(new CustomEvent('toggle-settings'));
         };
     }
 
@@ -97,6 +101,13 @@ function loadButtonScript() {
             if (menuPanel) {
                 menuPanel.classList.toggle("float-panel-closed");
             }
+        };
+    }
+
+    let loginBtn = document.getElementById("login-switch");
+    if (loginBtn) {
+        loginBtn.onclick = function () {
+            window.dispatchEvent(new CustomEvent('open-login'));
         };
     }
 }

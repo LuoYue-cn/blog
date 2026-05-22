@@ -1,8 +1,8 @@
 ---
 import type { MarkdownHeading } from "astro";
-import Categories from "./Categories.astro";
+import AgeCounter from "./AgeCounter.astro";
 import Profile from "./Profile.astro";
-import Tag from "./Tags.astro";
+import TagFilter from "./TagFilter.astro";
 
 interface Props {
 	class?: string;
@@ -12,11 +12,76 @@ interface Props {
 const className = Astro.props.class;
 ---
 <div id="sidebar" class:list={[className, "w-full"]}>
-    <div class="flex flex-col w-full gap-4 mb-4">
+    <div class="flex flex-col w-full gap-[var(--layout-gap)] mb-4">
         <Profile></Profile>
     </div>
-    <div id="sidebar-sticky" class="transition-all duration-700 flex flex-col w-full gap-4 top-4 sticky top-4">
-        <Categories class="onload-animation" style="animation-delay: 150ms"></Categories>
-        <Tag class="onload-animation" style="animation-delay: 200ms"></Tag>
+    <div id="sidebar-sticky" class="transition-all duration-700 flex flex-col w-full gap-[var(--layout-gap)] top-4 sticky top-4">
+        <!-- 关于我 + 技能熟练度（合并为一个块） -->
+        <div id="about-section" class="card-base p-4 onload-animation relative" style="animation-delay: 100ms">
+            <button id="edit-about-btn" aria-label="Edit about"
+                    style="position:absolute;top:8px;right:8px;z-index:10;width:28px;height:28px;border:none;border-radius:6px;background:var(--btn-regular-bg);color:var(--btn-content);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;opacity:0;transition:opacity 0.2s;"
+                    title="编辑关于我">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </button>
+            <div class="text-sm font-semibold mb-2 text-neutral-700 dark:text-neutral-300">关于我</div>
+            <div id="about-text" class="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed whitespace-pre-wrap">
+                写点什么介绍一下自己吧
+            </div>
+            <!-- 技能（在关于我文本下方） -->
+            <div id="skills-container" class="flex flex-col gap-3 mt-3"></div>
+        </div>
+
+        <AgeCounter class="onload-animation" style="animation-delay: 150ms"></AgeCounter>
+        <TagFilter class="onload-animation" style="animation-delay: 200ms"></TagFilter>
     </div>
 </div>
+
+<script>
+(function() {
+  function loadSidebarContent() {
+    try {
+      // About text
+      const about = localStorage.getItem('blog-about');
+      if (about) {
+        const el = document.getElementById('about-text');
+        if (el) el.textContent = about;
+      }
+
+      // Skills
+      const skillsRaw = localStorage.getItem('blog-skills');
+      if (skillsRaw) {
+        const skills = JSON.parse(skillsRaw);
+        const container = document.getElementById('skills-container');
+        if (container && skills.length) {
+          container.innerHTML = skills.map(sk => {
+            const pct = Math.min(Math.max(sk.level || 0, 0), 100);
+            return `<div class="flex flex-col gap-1">
+              <div class="flex justify-between text-xs">
+                <span class="text-neutral-700 dark:text-neutral-300 font-medium">${sk.name}</span>
+                <span class="text-neutral-400">${pct}%</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-[var(--btn-regular-bg)] overflow-hidden">
+                <div class="h-full rounded-full bg-[var(--primary)] transition-all" style="width:${pct}%"></div>
+              </div>
+            </div>`;
+          }).join('');
+        }
+      }
+    } catch(e) { /* ignore */ }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadSidebarContent);
+  window.addEventListener('profile-updated', loadSidebarContent);
+
+  // About edit button - show on hover
+  const aboutSec = document.getElementById('about-section');
+  const aboutEdit = document.getElementById('edit-about-btn');
+  if (aboutSec && aboutEdit) {
+    aboutSec.addEventListener('mouseenter', () => { aboutEdit.style.opacity = '1'; });
+    aboutSec.addEventListener('mouseleave', () => { aboutEdit.style.opacity = '0'; });
+    aboutEdit.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('open-about-editor'));
+    });
+  }
+})();
+</script>

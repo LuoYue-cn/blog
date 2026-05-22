@@ -1,0 +1,160 @@
+---
+// 综合筛选器：年份 + 月份 + 分类 + 标签
+import { getTagList, getCategoryList, getSortedPosts } from "../../utils/content-utils";
+
+const posts = await getSortedPosts();
+const allTags = await getTagList();
+const allCategories = await getCategoryList();
+
+const years = [...new Set(posts.map(p => String(p.data.published.getFullYear())))].sort((a, b) => b.localeCompare(a));
+const months = [...new Set(posts.map(p => String(p.data.published.getMonth() + 1).padStart(2, "0")))].sort();
+const tagNames = allTags.map(t => t.name);
+const categoryNames = allCategories.map(c => c.name);
+
+const hasData = years.length > 0;
+---
+
+{hasData &&
+<div class="card-base p-4">
+  <div class="text-sm font-semibold mb-3 text-neutral-700 dark:text-neutral-300">筛选</div>
+
+  <!-- 年份 -->
+  <div class="text-xs text-neutral-400 mb-1">年份</div>
+  <div id="filter-years" class="flex flex-wrap gap-1.5 mb-3">
+    <span class="filter-chip filter-chip-active" data-year="">全部</span>
+    {years.map(y => <span class="filter-chip" data-year={y}>{y}</span>)}
+  </div>
+
+  <!-- 月份 -->
+  <div id="filter-months-wrapper" class="hidden">
+    <div class="text-xs text-neutral-400 mb-1">月份</div>
+    <div id="filter-months" class="flex flex-wrap gap-1.5 mb-3">
+      <span class="filter-chip filter-chip-active" data-month="">全部</span>
+      {months.map(m => <span class="filter-chip" data-month={m}>{m}</span>)}
+    </div>
+  </div>
+
+  <!-- 分类 -->
+  <div class="text-xs text-neutral-400 mb-1">分类</div>
+  <div id="filter-categories" class="flex flex-wrap gap-1.5 mb-3">
+    <span class="filter-chip filter-chip-active" data-category="">全部</span>
+    {categoryNames.map(c => <span class="filter-chip" data-category={c}>{c}</span>)}
+  </div>
+
+  <!-- 标签 -->
+  <div class="text-xs text-neutral-400 mb-1">标签</div>
+  <div id="filter-tags" class="flex flex-wrap gap-1.5">
+    <span class="filter-chip filter-chip-active" data-tag="">全部</span>
+    {tagNames.map(t => <span class="filter-chip" data-tag={t}>{t}</span>)}
+  </div>
+
+</div>
+}
+
+<script>
+function initTagFilter() {
+  const containers = {
+    years: document.getElementById('filter-years'),
+    monthsWrapper: document.getElementById('filter-months-wrapper'),
+    months: document.getElementById('filter-months'),
+    categories: document.getElementById('filter-categories'),
+    tags: document.getElementById('filter-tags'),
+  };
+  if (!containers.years) return;
+
+  const posts = document.querySelectorAll('[data-post-id]');
+  if (!posts.length) return;
+
+  const postData = [];
+  posts.forEach(post => {
+    postData.push({
+      el: post,
+      year: post.getAttribute('data-post-year') || '',
+      month: post.getAttribute('data-post-month') || '',
+      category: post.getAttribute('data-post-category') || '',
+      tags: (post.getAttribute('data-post-tags') || '').split(',').filter(Boolean),
+    });
+  });
+
+  const state = { year: '', month: '', category: '', tag: '' };
+
+  function filterPosts() {
+    postData.forEach(d => {
+      let show = true;
+      if (state.year && d.year !== state.year) show = false;
+      if (show && state.month && d.month !== state.month) show = false;
+      if (show && state.category && d.category !== state.category) show = false;
+      if (show && state.tag && !d.tags.includes(state.tag)) show = false;
+      d.el.style.display = show ? '' : 'none';
+    });
+  }
+
+  function setupChips(container, dataAttr, onChange) {
+    if (!container) return;
+    const chips = container.querySelectorAll('[data-' + dataAttr + ']');
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const val = chip.getAttribute('data-' + dataAttr) || '';
+        onChange(val);
+        chips.forEach(c => c.classList.toggle('filter-chip-active', c.getAttribute('data-' + dataAttr) === val));
+      });
+    });
+  }
+
+  // Year
+  setupChips(containers.years, 'year', (val) => {
+    state.year = val;
+    state.month = '';
+    containers.monthsWrapper?.classList.toggle('hidden', !val);
+    containers.months?.querySelectorAll('[data-month]').forEach(c => {
+      c.classList.toggle('filter-chip-active', c.getAttribute('data-month') === '');
+    });
+    filterPosts();
+  });
+
+  // Month
+  setupChips(containers.months, 'month', (val) => {
+    state.month = val;
+    filterPosts();
+  });
+
+  // Category
+  setupChips(containers.categories, 'category', (val) => {
+    state.category = val;
+    filterPosts();
+  });
+
+  // Tag
+  setupChips(containers.tags, 'tag', (val) => {
+    state.tag = val;
+    filterPosts();
+  });
+}
+
+document.addEventListener('DOMContentLoaded', initTagFilter);
+document.addEventListener('swup:content:replace', initTagFilter);
+</script>
+
+<style>
+  .filter-chip {
+    background: var(--btn-regular-bg);
+    color: var(--btn-content);
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+  }
+  .filter-chip:hover {
+    background: var(--btn-regular-bg-hover);
+  }
+  .filter-chip:active {
+    background: var(--btn-regular-bg-active);
+  }
+  .filter-chip-active {
+    background: var(--primary) !important;
+    color: white !important;
+  }
+
+</style>

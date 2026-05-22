@@ -202,7 +202,7 @@ import {
 	// SizeObserverPlugin,
 	// ClickScrollPlugin
 } from 'overlayscrollbars';
-import {getHue, getStoredTheme, setHue, setTheme} from "../utils/setting-utils";
+import {getHue, getStoredTheme, setHue, setTheme, getCardRadius, setCardRadius, getLayoutDensity, setLayoutDensity, getFontSize, setFontSize} from "../utils/setting-utils";
 import {pathsEqual, url} from "../utils/url-utils";
 import {
 	BANNER_HEIGHT,
@@ -272,7 +272,6 @@ function setClickOutsideToClose(panel: string, ignores: string[]) {
 		panelDom!.classList.add("float-panel-closed");
 	});
 }
-setClickOutsideToClose("display-setting", ["display-setting", "display-settings-switch"])
 setClickOutsideToClose("nav-menu-panel", ["nav-menu-panel", "nav-menu-switch"])
 setClickOutsideToClose("search-panel", ["search-panel", "search-bar", "search-switch"])
 
@@ -363,10 +362,86 @@ function showBanner() {
 	banner.classList.remove('opacity-0', 'scale-105');
 }
 
+function loadExtraSettings() {
+	setCardRadius(getCardRadius());
+	setLayoutDensity(getLayoutDensity());
+	setFontSize(getFontSize());
+	loadBgAndCardStyle();
+	loadFromGitHub();
+}
+async function loadFromGitHub() {
+	try {
+		const token = localStorage.getItem('github_token');
+		if (!token) return;
+		// Verify token still valid
+		const verifyRes = await fetch('https://api.github.com/user', {
+			headers: { Authorization: `Bearer ${token}` },
+		});
+		if (!verifyRes.ok) { localStorage.removeItem('github_token'); return; }
+
+		// Fetch blog data from GitHub raw
+		const rawUrl = 'https://raw.githubusercontent.com/LuoYue-cn/blog/main/data/blog-data.json';
+		const res = await fetch(rawUrl, { cache: 'no-cache' });
+		if (res.status === 404) return;
+		if (!res.ok) return;
+		const data = await res.json();
+		if (!data) return;
+
+		// Apply to localStorage
+		if (data.profile) localStorage.setItem('blog-profile', JSON.stringify(data.profile));
+		if (data.about) localStorage.setItem('blog-about', data.about);
+		if (data.skills) localStorage.setItem('blog-skills', JSON.stringify(data.skills));
+		if (data.settings) {
+			const s = data.settings;
+			if (s.hue) { localStorage.setItem('hue', String(s.hue)); setHue(Number(s.hue)); }
+			if (s['card-radius']) { localStorage.setItem('card-radius', String(s['card-radius'])); setCardRadius(Number(s['card-radius'])); }
+			if (s['layout-density']) { localStorage.setItem('layout-density', s['layout-density']); setLayoutDensity(s['layout-density']); }
+			if (s['font-size']) { localStorage.setItem('font-size', s['font-size']); setFontSize(s['font-size']); }
+			if (s['bg-url']) localStorage.setItem('bg-url', s['bg-url']);
+			if (s['bg-blur']) localStorage.setItem('bg-blur', String(s['bg-blur']));
+			if (s['card-opacity']) localStorage.setItem('card-opacity', String(s['card-opacity']));
+			if (s['card-blur']) localStorage.setItem('card-blur', String(s['card-blur']));
+			if (s['page-size']) localStorage.setItem('page-size', String(s['page-size']));
+		}
+		loadBgAndCardStyle();
+		window.dispatchEvent(new CustomEvent('profile-updated'));
+	} catch(e) { console.warn('GitHub sync:', e); }
+}
+function loadBgAndCardStyle() {
+	try {
+		const bgUrl = localStorage.getItem('bg-url');
+		const bgBlur = parseInt(localStorage.getItem('bg-blur') || '0');
+		const cardOpacity = parseFloat(localStorage.getItem('card-opacity') || '1');
+		const cardBlur = parseInt(localStorage.getItem('card-blur') || '0');
+
+		if (bgUrl) {
+			const div = document.createElement('div');
+			div.id = 'bg-layer';
+			let css = `position:fixed;inset:0;z-index:-1;background-image:url(${JSON.stringify(bgUrl)});background-size:cover;background-position:center;background-attachment:fixed;`;
+			if (bgBlur > 0) css += `filter:blur(${bgBlur}px);transform:scale(1.05);`;
+			div.style.cssText = css;
+			document.body.prepend(div);
+			document.documentElement.style.backgroundColor = 'transparent';
+		}
+
+		if (cardOpacity !== 1 || cardBlur > 0) {
+			const style = document.createElement('style');
+			style.id = 'settings-card-style';
+			style.textContent = `
+:root { --card-bg: rgba(255,255,255,${cardOpacity}); }
+:root.dark { --card-bg: rgba(30,30,45,${cardOpacity}); }
+.card-base { backdrop-filter: blur(${cardBlur}px); -webkit-backdrop-filter: blur(${cardBlur}px); }
+`;
+			document.head.appendChild(style);
+		}
+	} catch(e) { /* ignore */ }
+}
+
 function init() {
 	// disableAnimation()()		// TODO
 	loadTheme();
 	loadHue();
+	loadExtraSettings();
 	initCustomScrollbar();
 	showBanner();
 }

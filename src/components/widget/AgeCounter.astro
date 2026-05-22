@@ -1,0 +1,56 @@
+---
+// 年龄计数器 — 参考个人主页的年龄计算逻辑
+// 生日可在下方 BIRTH 变量中修改
+const BIRTH = "2011-04-02";
+---
+
+<div class="card-base p-4">
+  <div id="age-counter" class="text-center">
+    <div class="age-number text-3xl font-bold text-[var(--primary)]">
+      <span id="age-years">--</span><span class="text-lg font-normal"> 岁</span>
+    </div>
+    <div class="text-sm text-neutral-500 dark:text-neutral-400 mt-1">已来到人间</div>
+    <div class="text-lg font-semibold mt-1" id="age-days">-- 天</div>
+    <div class="text-xs text-neutral-400 dark:text-neutral-500 mt-1" id="age-next">距下次生日还有 -- 天</div>
+  </div>
+</div>
+
+<script define:vars={{ BIRTH }}>
+function parseLocalDate(str) {
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d); // month is 0-indexed, local timezone
+}
+
+function updateAge() {
+  const birth = parseLocalDate(BIRTH);
+  const now = new Date();
+  const diff = now - birth;
+  const totalDays = Math.floor(diff / 86400000);
+
+  let years = now.getFullYear() - birth.getFullYear();
+  const mDiff = now.getMonth() - birth.getMonth();
+  if (mDiff < 0 || (mDiff === 0 && now.getDate() < birth.getDate())) years--;
+
+  const nextBD = new Date(now.getFullYear(), birth.getMonth(), birth.getDate());
+  if (nextBD < now) nextBD.setFullYear(nextBD.getFullYear() + 1);
+  const daysToNext = Math.ceil((nextBD - now) / 86400000);
+
+  const yearsEl = document.getElementById('age-years');
+  const daysEl = document.getElementById('age-days');
+  const nextEl = document.getElementById('age-next');
+
+  if (yearsEl) yearsEl.textContent = String(years);
+  if (daysEl) daysEl.textContent = totalDays.toLocaleString() + ' 天';
+  if (nextEl) {
+    if (daysToNext <= 365) {
+      nextEl.textContent = `距 ${years + 1} 岁生日还有 ${daysToNext} 天`;
+    } else {
+      nextEl.textContent = '';
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', updateAge);
+// 每60秒更新一次
+setInterval(updateAge, 60000);
+</script>

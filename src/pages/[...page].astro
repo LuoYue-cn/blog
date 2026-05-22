@@ -21,3 +21,22 @@ const len = page.data.length;
     <PostPage page={page}></PostPage>
     <Pagination class="mx-auto onload-animation" page={page} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination>
 </MainGridLayout>
+
+<script>
+// 客户端分页：根据每页文章数设置显示/隐藏文章
+(function() {
+  function applyPageSize() {
+    try {
+      const size = parseInt(localStorage.getItem('page-size') || '8');
+      if (size <= 0) return;
+      const posts = document.querySelectorAll('[data-post-id]');
+      posts.forEach((post, i) => {
+        post.style.display = i < size ? '' : 'none';
+      });
+    } catch(e) { /* ignore */ }
+  }
+  applyPageSize();
+  window.addEventListener('profile-updated', applyPageSize);
+  window.addEventListener('page-size-changed', applyPageSize);
+})();
+</script>
