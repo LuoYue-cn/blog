@@ -379,8 +379,8 @@ async function loadFromGitHub() {
 		});
 		if (!verifyRes.ok) { localStorage.removeItem('github_token'); return; }
 
-		// Fetch blog data from GitHub raw
-		const rawUrl = 'https://raw.githubusercontent.com/LuoYue-cn/blog/main/data/blog-data.json';
+		// Fetch blog data from GitHub raw (with cache busting)
+		const rawUrl = `https://raw.githubusercontent.com/LuoYue-cn/blog/main/data/blog-data.json?t=${Date.now()}`;
 		const res = await fetch(rawUrl, { cache: 'no-cache' });
 		if (res.status === 404) return;
 		if (!res.ok) return;

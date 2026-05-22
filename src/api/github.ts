@@ -5,7 +5,7 @@ const RAW = "https://raw.githubusercontent.com";
 
 /** 从 GitHub raw 读取数据文件（无需 Token，公开仓库可用） */
 export async function fetchPublicData<T>(): Promise<T | null> {
-	const url = `${RAW}/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.dataPath}`;
+	const url = `${RAW}/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.dataPath}?t=${Date.now()}`;
 	const res = await fetch(url, { cache: "no-cache" });
 	if (res.status === 404) return null;
 	if (!res.ok) throw new Error(`读取失败: ${res.status}`);
